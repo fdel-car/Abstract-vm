@@ -14,7 +14,7 @@ class Operand : public IOperand {
     return *this;
     (void)rhs;
   }
-  IOperand const *operator+(IOperand const &rhs) const {}
+  // IOperand const *operator+(IOperand const &rhs) const {}
 
   T getValue(void) const { return _value; }
   int getPrecision(void) const { return static_cast<int>(_type); }
