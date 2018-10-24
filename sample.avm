@@ -2,13 +2,16 @@
 ; sample.avm -
 ; -------------
 
-push int32(42)
-push int32(33)
+push int8(79)
+print
+push int8(75)
+print
+push int16(3276)
 add
 push float(44.55)
 mul
 push double(42.42)
-push int32(42)
+push int32(241768)
 dump
 pop
 assert double(42.42)
