@@ -5,23 +5,28 @@ Parser::Parser(std::vector<std::pair<eTokenType, std::string>> const &vector)
   try {
     for (; _it != _vector.end(); _it++) {
       if (_it->first == Instruction) {
-        if (_it->second == "exit") return;
+        if (_it->second == "exit")
+          return;
         Parser::Instr instruction = _instructions[_it->second];
         (this->*instruction)();
-      } else {
-        std::cout << "Should not happen: " << _it->second << std::endl;
       }
     }
-  } catch (std::out_of_range &err) {
+  } catch (const std::out_of_range &err) {
     std::cout << "Parser error: could not \033[1m" << (_it - 2)->second
-              << "\033[0m " << _it->second << ", it's \033[31;1mout of "
-              << (_it - 1)->second << " range\033[0m." << std::endl;
-  } catch (std::runtime_error &err) {
-    std::cout << "Parser error: " << err.what() << std::endl;
+              << "\033[0m " << _it->second << ", \033[31;1m" << err.what()
+              << "\033[0m." << std::endl;
+  } catch (const std::runtime_error &err) {
+    std::cout << "Parser error: could not \033[1m" << _it->second << "\033[0m"
+              << err.what() << std::endl;
   }
 }
 
-Parser::~Parser(void) {}
+Parser::~Parser(void) {
+  for (std::list<IOperand const *>::const_iterator it = _list.begin();
+       it != _list.end(); it++)
+    delete *it;
+  _list.clear();
+}
 
 void Parser::_push(void) {
   _it++;
@@ -31,23 +36,33 @@ void Parser::_push(void) {
 
 void Parser::_pop(void) {
   if (_list.empty())
-    throw std::runtime_error("\033[1mpop\033[0m on an empty stack.");
+    throw std::runtime_error(", the stack is empty.");
   delete _list.front();
   _list.pop_front();
 }
 
-void Parser::_dump(void) {}
+void Parser::_dump(void) {
+  for (std::list<IOperand const *>::const_iterator it = _list.begin();
+       it != _list.end(); it++)
+    std::cout << (*it)->toString() << std::endl;
+}
 
-void Parser::_assert(void) { _it++; }
+void Parser::_assert(void) {
+  _it++;
+  _it++;
+}
 
 void Parser::_add(void) {
   if (_list.size() < 2)
-    throw std::runtime_error(
-        "\033[1madd\033[0m on a stack with less than two members.");
+    throw std::runtime_error(", the stack has less than two members.");
   std::list<IOperand const *>::iterator it = _list.begin();
-  std::advance(it, 1);  // Get previous IOperand *
-  std::cout << (_list.front())->getPrecision() << (*it)->getPrecision()
-            << std::endl;
+  std::advance(it, 1); // Get previous IOperand *
+  IOperand const *result =
+      (_list.front())->getPrecision() > (*it)->getPrecision()
+          ? *_list.front() + *(*it)
+          : *(*it) + *_list.front();
+  _clearReplacedOperands();
+  _list.push_front(result);
 }
 
 void Parser::_sub(void) {}
@@ -62,9 +77,18 @@ void Parser::_print(void) {
   if ((_list.front())->getType() == Int8) {
     Operand<char> const *operand =
         dynamic_cast<Operand<char> const *>(_list.front());
+    if (operand->getValue() < 0)
+      throw std::runtime_error(", non ASCII value.");
     std::cout << operand->getValue() << std::endl;
   } else
-    throw std::runtime_error("\033[1mprint\033[0m called on non int8 value");
+    throw std::runtime_error(", non Int8 value.");
+}
+
+void Parser::_clearReplacedOperands(void) {
+  delete _list.front();
+  _list.pop_front();
+  delete _list.front();
+  _list.pop_front();
 }
 
 std::map<std::string, Parser::Instr> Parser::_instantiateInstr(void) {

@@ -6,7 +6,9 @@ push int8(79)
 print
 push int8(75)
 print
-push int16(3276)
+pop
+push float(7575.48)
+push int16(-32760)
 add
 push float(44.55)
 mul

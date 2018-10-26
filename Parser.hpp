@@ -1,18 +1,18 @@
 #ifndef PARSER_HPP
 #define PARSER_HPP
 
-#include <list>
 #include "Lexer.hpp"
 #include "OperandFactory.hpp"
+#include <list>
 
 class Parser {
   typedef void (Parser::*Instr)(void);
 
- public:
+public:
   Parser(std::vector<std::pair<eTokenType, std::string>> const &vector);
   virtual ~Parser(void);
 
- private:
+private:
   std::vector<std::pair<eTokenType, std::string>> const &_vector;
   std::list<IOperand const *> _list;
   static std::map<std::string, Instr> _instructions;
@@ -34,6 +34,7 @@ class Parser {
   void _div(void);
   void _mod(void);
   void _print(void);
+  void _clearReplacedOperands(void);
   static std::map<std::string, Instr> _instantiateInstr(void);
   static std::map<std::string, eOperandType> _instantiateOpTypes(void);
 };

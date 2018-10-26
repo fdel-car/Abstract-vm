@@ -95,7 +95,7 @@ Lexer::Lexer(std::string const &filename)
               throw std::logic_error(instr + " takes no parameter.");
           }
         }
-      } catch (std::logic_error &err) {
+      } catch (const std::logic_error &err) {
         std::cout << "Lexer error: \033[1mline " << lineIndex << "\033[0m, "
                   << err.what() << std::endl;
         _isValid = false;
@@ -108,8 +108,8 @@ Lexer::Lexer(std::string const &filename)
 
 Lexer::~Lexer(void) {}
 
-std::vector<std::pair<eTokenType, std::string>> const Lexer::getVector(
-    void) const {
+std::vector<std::pair<eTokenType, std::string>> const
+Lexer::getVector(void) const {
   return _vector;
 }
 

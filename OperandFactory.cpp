@@ -11,7 +11,7 @@ IOperand const *OperandFactory::_createInt8(std::string const &value) const {
       std::numeric_limits<char>::max() < tmp) {
     throw std::out_of_range("stoc: out of range");
   }
-  return new Operand<char>(static_cast<char>(tmp), Int8);
+  return new Operand<char>(static_cast<char>(tmp), Int8, value);
 }
 
 IOperand const *OperandFactory::_createInt16(std::string const &value) const {
@@ -20,19 +20,19 @@ IOperand const *OperandFactory::_createInt16(std::string const &value) const {
       std::numeric_limits<short>::max() < tmp) {
     throw std::out_of_range("stos: out of range");
   }
-  return new Operand<short>(static_cast<short>(tmp), Int16);
+  return new Operand<short>(static_cast<short>(tmp), Int16, value);
 }
 
 IOperand const *OperandFactory::_createInt32(std::string const &value) const {
-  return new Operand<int>(std::stoi(value), Int32);
+  return new Operand<int>(std::stoi(value), Int32, value);
 }
 
 IOperand const *OperandFactory::_createFloat(std::string const &value) const {
-  return new Operand<float>(std::stof(value), Float);
+  return new Operand<float>(std::stof(value), Float, value);
 }
 
 IOperand const *OperandFactory::_createDouble(std::string const &value) const {
-  return new Operand<double>(std::stod(value), Double);
+  return new Operand<double>(std::stod(value), Double, value);
 }
 
 IOperand const *OperandFactory::createOperand(eOperandType type,
