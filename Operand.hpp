@@ -3,6 +3,7 @@
 
 #include "IOperand.hpp"
 #include <limits>
+#include <regex>
 
 template <typename T>
 void addOverflow(T a, std::string const &lhs, T b, std::string const &rhs) {
@@ -38,9 +39,11 @@ void mulOverflow(T a, std::string const &lhs, T b, std::string const &rhs) {
 template <typename T> class Operand : public IOperand {
 public:
   Operand(T value, eOperandType type)
-      : _value(value), _type(type), _str(std::to_string(_value)) {}
+      : _value(value), _type(type),
+        _str(std::regex_replace(std::to_string(_value), _regex, "$1")) {}
   Operand(T value, eOperandType type, std::string const &str)
-      : _value(value), _type(type), _str(str) {}
+      : _value(value), _type(type),
+        _str(std::regex_replace(str, _regex, "$1")) {}
   Operand(Operand const &src)
       : _value(src.getValue()), _type(src.getType()), _str(src.toString()) {}
   virtual ~Operand(void) {}
@@ -126,6 +129,7 @@ private:
   T _value;
   eOperandType _type;
   std::string const _str;
+  static std::regex const _regex;
 
   Operand(void);
   Operand &operator=(Operand const &rhs);
@@ -145,5 +149,8 @@ private:
     }
   }
 };
+
+template <typename T>
+std::regex const Operand<T>::_regex = std::regex("^(\\d+\\.\\d*?\\d)0+$");
 
 #endif
