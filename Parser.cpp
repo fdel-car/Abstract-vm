@@ -57,17 +57,30 @@ void Parser::_add(void) {
     throw std::runtime_error(", the stack has less than two members.");
   std::list<IOperand const *>::iterator it = _list.begin();
   std::advance(it, 1); // Get previous IOperand *
-  IOperand const *result =
-      (_list.front())->getPrecision() > (*it)->getPrecision()
-          ? *_list.front() + *(*it)
-          : *(*it) + *_list.front();
+  IOperand const *result = *(*it) + *_list.front();
   _clearReplacedOperands();
   _list.push_front(result);
 }
 
-void Parser::_sub(void) {}
+void Parser::_sub(void) {
+  if (_list.size() < 2)
+    throw std::runtime_error(", the stack has less than two members.");
+  std::list<IOperand const *>::iterator it = _list.begin();
+  std::advance(it, 1); // Get previous IOperand *
+  IOperand const *result = *(*it) - *_list.front();
+  _clearReplacedOperands();
+  _list.push_front(result);
+}
 
-void Parser::_mul(void) {}
+void Parser::_mul(void) {
+  if (_list.size() < 2)
+    throw std::runtime_error(", the stack has less than two members.");
+  std::list<IOperand const *>::iterator it = _list.begin();
+  std::advance(it, 1); // Get previous IOperand *
+  IOperand const *result = *(*it) * *_list.front();
+  _clearReplacedOperands();
+  _list.push_front(result);
+}
 
 void Parser::_div(void) {}
 

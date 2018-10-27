@@ -2,7 +2,6 @@
 #include "Parser.hpp"
 #include <fstream>
 
-// Don't forget exit lexer error case (no exit in file)
 int main(int argc, char **argv) {
   if (argc > 1) {
     for (int i = 1; i < argc; i++) {
