@@ -2,7 +2,7 @@
 #define OPERANDFACTORY_HPP
 
 #include <map>
-#include "Operand.hpp"
+#include "IOperand.hpp"
 
 class OperandFactory {
   typedef IOperand const *(OperandFactory::*Factory)(

@@ -1,12 +1,12 @@
 #include "Parser.hpp"
+#include "Operand.hpp"
 
 Parser::Parser(std::vector<std::pair<eTokenType, std::string>> const &vector)
     : _vector(vector), _it(_vector.begin()) {
   try {
     for (; _it != _vector.end(); _it++) {
       if (_it->first == Instruction) {
-        if (_it->second == "exit")
-          return;
+        if (_it->second == "exit") return;
         Parser::Instr instruction = _instructions[_it->second];
         (this->*instruction)();
       }
@@ -35,8 +35,7 @@ void Parser::_push(void) {
 }
 
 void Parser::_pop(void) {
-  if (_list.empty())
-    throw std::runtime_error(", the stack is empty.");
+  if (_list.empty()) throw std::runtime_error(", the stack is empty.");
   delete _list.front();
   _list.pop_front();
 }
@@ -56,7 +55,7 @@ void Parser::_add(void) {
   if (_list.size() < 2)
     throw std::runtime_error(", the stack has less than two members.");
   std::list<IOperand const *>::iterator it = _list.begin();
-  std::advance(it, 1); // Get previous IOperand *
+  std::advance(it, 1);  // Get previous IOperand *
   IOperand const *result = *(*it) + *_list.front();
   _clearReplacedOperands();
   _list.push_front(result);
@@ -66,7 +65,7 @@ void Parser::_sub(void) {
   if (_list.size() < 2)
     throw std::runtime_error(", the stack has less than two members.");
   std::list<IOperand const *>::iterator it = _list.begin();
-  std::advance(it, 1); // Get previous IOperand *
+  std::advance(it, 1);  // Get previous IOperand *
   IOperand const *result = *(*it) - *_list.front();
   _clearReplacedOperands();
   _list.push_front(result);
@@ -76,7 +75,7 @@ void Parser::_mul(void) {
   if (_list.size() < 2)
     throw std::runtime_error(", the stack has less than two members.");
   std::list<IOperand const *>::iterator it = _list.begin();
-  std::advance(it, 1); // Get previous IOperand *
+  std::advance(it, 1);  // Get previous IOperand *
   IOperand const *result = *(*it) * *_list.front();
   _clearReplacedOperands();
   _list.push_front(result);
@@ -90,8 +89,7 @@ void Parser::_print(void) {
   if ((_list.front())->getType() == Int8) {
     Operand<char> const *operand =
         dynamic_cast<Operand<char> const *>(_list.front());
-    if (operand->getValue() < 0)
-      throw std::runtime_error(", non ASCII value.");
+    if (operand->getValue() < 0) throw std::runtime_error(", non ASCII value.");
     std::cout << operand->getValue() << std::endl;
   } else
     throw std::runtime_error(", non Int8 value.");

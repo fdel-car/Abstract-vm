@@ -1,9 +1,34 @@
 #ifndef OPERAND_HPP
 #define OPERAND_HPP
 
-#include "IOperand.hpp"
 #include <limits>
 #include <regex>
+#include "OperandFactory.hpp"
+
+// // Type list, this could have been a solution if I didn't use a template
+// template <eOperandType eType>
+// struct typeList;
+
+// template <>
+// struct typeList<Int8> {
+//   typedef char type;
+// };
+// template <>
+// struct typeList<Int16> {
+//   typedef short type;
+// };
+// template <>
+// struct typeList<Int32> {
+//   typedef int type;
+// };
+// template <>
+// struct typeList<Float> {
+//   typedef float type;
+// };
+// template <>
+// struct typeList<Double> {
+//   typedef double type;
+// };
 
 template <typename T>
 void addOverflow(T a, std::string const &lhs, T b, std::string const &rhs) {
@@ -23,7 +48,10 @@ void subOverflow(T a, std::string const &lhs, T b, std::string const &rhs) {
         "\033[0m, it would cause an \033[31;1moverflow\033[0m.");
 }
 
-template <typename T> T abs(const T &nbr) { return nbr < 0 ? -nbr : nbr; }
+template <typename T>
+T abs(const T &nbr) {
+  return nbr < 0 ? -nbr : nbr;
+}
 
 template <typename T>
 void mulOverflow(T a, std::string const &lhs, T b, std::string const &rhs) {
@@ -36,88 +64,57 @@ void mulOverflow(T a, std::string const &lhs, T b, std::string const &rhs) {
         "\033[0m, it would cause an \033[31;1moverflow\033[0m.");
 }
 
-template <typename T> class Operand : public IOperand {
-public:
+template <typename T>
+class Operand : public IOperand {
+ public:
   Operand(T value, eOperandType type)
-      : _value(value), _type(type),
+      : _value(value),
+        _type(type),
         _str(std::regex_replace(std::to_string(_value), _regex, "$1")) {}
   Operand(T value, eOperandType type, std::string const &str)
-      : _value(value), _type(type),
+      : _value(value),
+        _type(type),
         _str(std::regex_replace(str, _regex, "$1")) {}
   Operand(Operand const &src)
       : _value(src.getValue()), _type(src.getType()), _str(src.toString()) {}
   virtual ~Operand(void) {}
 
   IOperand const *operator+(IOperand const &rhs) const {
-    double rhsValue = _getRhsValue(rhs);
-    if (rhs.getPrecision() > getPrecision()) {
-      switch (rhs.getType()) {
-      case Int16:
-        addOverflow<short>(_value, _str, rhsValue, rhs.toString());
-        return new Operand<short>(_value + rhsValue, rhs.getType());
-      case Int32:
-        addOverflow<int>(_value, _str, rhsValue, rhs.toString());
-        return new Operand<int>(_value + rhsValue, rhs.getType());
-      case Float:
-        addOverflow<float>(_value, _str, rhsValue, rhs.toString());
-        return new Operand<float>(_value + rhsValue, rhs.getType());
-      case Double:
-        addOverflow<double>(_value, _str, rhsValue, rhs.toString());
-        return new Operand<double>(_value + rhsValue, rhs.getType());
-      default:
-        break;
-      }
-    }
+    if (rhs.getPrecision() > getPrecision()) return rhs + *this;
+    T rhsValue = _getRhsValue(rhs);
     addOverflow<T>(_value, _str, rhsValue, rhs.toString());
-    return new Operand<T>(_value + rhsValue, _type);
+    return _factory.createOperand(_type, std::to_string(_value + rhsValue));
   }
 
   IOperand const *operator-(IOperand const &rhs) const {
     double rhsValue = _getRhsValue(rhs);
     if (rhs.getPrecision() > getPrecision()) {
       switch (rhs.getType()) {
-      case Int16:
-        subOverflow<short>(_value, _str, rhsValue, rhs.toString());
-        return new Operand<short>(_value - rhsValue, rhs.getType());
-      case Int32:
-        subOverflow<int>(_value, _str, rhsValue, rhs.toString());
-        return new Operand<int>(_value - rhsValue, rhs.getType());
-      case Float:
-        subOverflow<float>(_value, _str, rhsValue, rhs.toString());
-        return new Operand<float>(_value - rhsValue, rhs.getType());
-      case Double:
-        subOverflow<double>(_value, _str, rhsValue, rhs.toString());
-        return new Operand<double>(_value - rhsValue, rhs.getType());
-      default:
-        break;
+        case Int16:
+          subOverflow<short>(_value, _str, rhsValue, rhs.toString());
+          break;
+        case Int32:
+          subOverflow<int>(_value, _str, rhsValue, rhs.toString());
+          break;
+        case Float:
+          subOverflow<float>(_value, _str, rhsValue, rhs.toString());
+          break;
+        case Double:
+          subOverflow<double>(_value, _str, rhsValue, rhs.toString());
+          break;
+        default:
+          break;
       }
-    }
-    subOverflow<T>(_value, _str, rhsValue, rhs.toString());
-    return new Operand<T>(_value - rhsValue, _type);
+    } else
+      subOverflow<T>(_value, _str, rhsValue, rhs.toString());
+    return _factory.createOperand(_type, std::to_string(_value - rhsValue));
   }
 
   IOperand const *operator*(IOperand const &rhs) const {
-    double rhsValue = _getRhsValue(rhs);
-    if (rhs.getPrecision() > getPrecision()) {
-      switch (rhs.getType()) {
-      case Int16:
-        mulOverflow<short>(_value, _str, rhsValue, rhs.toString());
-        return new Operand<short>(_value * rhsValue, rhs.getType());
-      case Int32:
-        mulOverflow<int>(_value, _str, rhsValue, rhs.toString());
-        return new Operand<int>(_value * rhsValue, rhs.getType());
-      case Float:
-        mulOverflow<float>(_value, _str, rhsValue, rhs.toString());
-        return new Operand<float>(_value * rhsValue, rhs.getType());
-      case Double:
-        mulOverflow<double>(_value, _str, rhsValue, rhs.toString());
-        return new Operand<double>(_value * rhsValue, rhs.getType());
-      default:
-        break;
-      }
-    }
+    if (rhs.getPrecision() > getPrecision()) return rhs * *this;
+    T rhsValue = _getRhsValue(rhs);
     mulOverflow<T>(_value, _str, rhsValue, rhs.toString());
-    return new Operand<T>(_value * rhsValue, _type);
+    return _factory.createOperand(_type, std::to_string(_value * rhsValue));
   }
 
   T getValue(void) const { return _value; }
@@ -125,27 +122,28 @@ public:
   eOperandType getType(void) const { return _type; }
   std::string const &toString(void) const { return _str; }
 
-private:
+ private:
   T _value;
-  eOperandType _type;
+  eOperandType const _type;
   std::string const _str;
   static std::regex const _regex;
+  OperandFactory _factory;
 
   Operand(void);
   Operand &operator=(Operand const &rhs);
 
   double _getRhsValue(IOperand const &rhs) const {
     switch (rhs.getType()) {
-    case Int8:
-      return dynamic_cast<Operand<char> const &>(rhs).getValue();
-    case Int16:
-      return dynamic_cast<Operand<short> const &>(rhs).getValue();
-    case Int32:
-      return dynamic_cast<Operand<int> const &>(rhs).getValue();
-    case Float:
-      return dynamic_cast<Operand<float> const &>(rhs).getValue();
-    case Double:
-      return dynamic_cast<Operand<double> const &>(rhs).getValue();
+      case Int8:
+        return dynamic_cast<Operand<char> const &>(rhs).getValue();
+      case Int16:
+        return dynamic_cast<Operand<short> const &>(rhs).getValue();
+      case Int32:
+        return dynamic_cast<Operand<int> const &>(rhs).getValue();
+      case Float:
+        return dynamic_cast<Operand<float> const &>(rhs).getValue();
+      case Double:
+        return dynamic_cast<Operand<double> const &>(rhs).getValue();
     }
   }
 };

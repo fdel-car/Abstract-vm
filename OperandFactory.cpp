@@ -1,5 +1,6 @@
 #include "OperandFactory.hpp"
 #include <limits>
+#include "Operand.hpp"
 
 OperandFactory::OperandFactory(void) {}
 
