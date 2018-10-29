@@ -1,6 +1,7 @@
 #ifndef OPERAND_HPP
 #define OPERAND_HPP
 
+#include <math.h>
 #include <limits>
 #include <regex>
 #include "OperandFactory.hpp"
@@ -57,12 +58,30 @@ template <typename T>
 void mulOverflow(T a, std::string const &lhs, T b, std::string const &rhs) {
   if ((abs(a) > std::numeric_limits<T>::max() / abs(b)) ||
       ((a == -1) && (b == std::numeric_limits<T>::lowest())) ||
-      ((b == -1) && (a == std::numeric_limits<T>::lowest())) ||
-      (abs(a) < std::numeric_limits<T>::lowest() / abs(b)))
+      ((b == -1) && (a == std::numeric_limits<T>::lowest())))
     throw std::overflow_error(
         " " + lhs + " and " + rhs +
         "\033[0m, it would cause an \033[31;1moverflow\033[0m.");
 }
+
+template <typename T>
+void divOverflow(T a, std::string const &lhs, T b, std::string const &rhs) {
+  if (a == std::numeric_limits<T>::lowest() && b == -1)
+    throw std::overflow_error(
+        " " + lhs + " and " + rhs +
+        "\033[0m, it would cause an \033[31;1moverflow\033[0m.");
+  if (b < 1.0 && b > 0.0) {
+    if ((abs(a) > std::numeric_limits<T>::max() / abs(1 / b)))
+      throw std::overflow_error(
+          " " + lhs + " and " + rhs +
+          "\033[0m, it would cause an \033[31;1moverflow\033[0m.");
+  }
+}
+
+class DivisionByZero : public std::runtime_error {
+ public:
+  DivisionByZero() : std::runtime_error("division by zero.") {}
+};
 
 template <typename T>
 class Operand : public IOperand {
@@ -71,10 +90,6 @@ class Operand : public IOperand {
       : _value(value),
         _type(type),
         _str(std::regex_replace(std::to_string(_value), _regex, "$1")) {}
-  Operand(T value, eOperandType type, std::string const &str)
-      : _value(value),
-        _type(type),
-        _str(std::regex_replace(str, _regex, "$1")) {}
   Operand(Operand const &src)
       : _value(src.getValue()), _type(src.getType()), _str(src.toString()) {}
   virtual ~Operand(void) {}
@@ -90,24 +105,22 @@ class Operand : public IOperand {
     double rhsValue = _getRhsValue(rhs);
     if (rhs.getPrecision() > getPrecision()) {
       switch (rhs.getType()) {
+        case Int8:
+          break;
         case Int16:
           subOverflow<short>(_value, _str, rhsValue, rhs.toString());
-          break;
         case Int32:
           subOverflow<int>(_value, _str, rhsValue, rhs.toString());
-          break;
         case Float:
           subOverflow<float>(_value, _str, rhsValue, rhs.toString());
-          break;
         case Double:
           subOverflow<double>(_value, _str, rhsValue, rhs.toString());
-          break;
-        default:
-          break;
       }
     } else
       subOverflow<T>(_value, _str, rhsValue, rhs.toString());
-    return _factory.createOperand(_type, std::to_string(_value - rhsValue));
+    return _factory.createOperand(
+        rhs.getPrecision() > getPrecision() ? rhs.getType() : _type,
+        std::to_string(_value - rhsValue));
   }
 
   IOperand const *operator*(IOperand const &rhs) const {
@@ -115,6 +128,37 @@ class Operand : public IOperand {
     T rhsValue = _getRhsValue(rhs);
     mulOverflow<T>(_value, _str, rhsValue, rhs.toString());
     return _factory.createOperand(_type, std::to_string(_value * rhsValue));
+  }
+
+  IOperand const *operator/(IOperand const &rhs) const {
+    double rhsValue = _getRhsValue(rhs);
+    if (rhsValue == 0) throw DivisionByZero();
+    if (rhs.getPrecision() > getPrecision()) {
+      switch (rhs.getType()) {
+        case Int8:
+          break;
+        case Int16:
+          divOverflow<short>(_value, _str, rhsValue, rhs.toString());
+        case Int32:
+          divOverflow<int>(_value, _str, rhsValue, rhs.toString());
+        case Float:
+          divOverflow<float>(_value, _str, rhsValue, rhs.toString());
+        case Double:
+          divOverflow<double>(_value, _str, rhsValue, rhs.toString());
+      }
+    } else
+      divOverflow<T>(_value, _str, rhsValue, rhs.toString());
+    return _factory.createOperand(
+        rhs.getPrecision() > getPrecision() ? rhs.getType() : _type,
+        std::to_string(_value / rhsValue));
+  }
+
+  IOperand const *operator%(IOperand const &rhs) const {
+    double rhsValue = _getRhsValue(rhs);
+    if (rhsValue == 0) throw DivisionByZero();
+    return _factory.createOperand(
+        rhs.getPrecision() > getPrecision() ? rhs.getType() : _type,
+        std::to_string(fmod(_value, rhsValue)));
   }
 
   T getValue(void) const { return _value; }
@@ -149,6 +193,6 @@ class Operand : public IOperand {
 };
 
 template <typename T>
-std::regex const Operand<T>::_regex = std::regex("^(\\d+\\.\\d*?\\d)0+$");
+std::regex const Operand<T>::_regex = std::regex("^(-?\\d+\\.\\d*?\\d)0+$");
 
 #endif

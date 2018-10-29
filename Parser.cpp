@@ -15,6 +15,8 @@ Parser::Parser(std::vector<std::pair<eTokenType, std::string>> const &vector)
     std::cout << "Parser error: could not \033[1m" << (_it - 2)->second
               << "\033[0m " << _it->second << ", \033[31;1m" << err.what()
               << "\033[0m." << std::endl;
+  } catch (const DivisionByZero &err) {
+    std::cout << "Parser error: " << err.what() << std::endl;
   } catch (const std::runtime_error &err) {
     std::cout << "Parser error: could not \033[1m" << _it->second << "\033[0m"
               << err.what() << std::endl;
@@ -48,42 +50,54 @@ void Parser::_dump(void) {
 
 void Parser::_assert(void) {
   _it++;
-  _it++;
+  Operand<double> const *lhs =
+      static_cast<Operand<double> const *>(_list.front());
+  Operand<double> const *rhs = static_cast<Operand<double> const *>(
+      _factory.createOperand(_operandTypes[_it->second], (++_it)->second));
+  if (lhs->getType() != rhs->getType()) {
+    delete rhs;
+    _it -= 2;
+    throw std::runtime_error(
+        ", the values compared are not stored in the same type.");
+  }
+  if (lhs->getValue() != rhs->getValue()) {
+    delete rhs;
+    _it -= 2;
+    throw std::runtime_error(", the current value is not " + (_it + 2)->second +
+                             ".");
+  }
+  delete rhs;
 }
 
 void Parser::_add(void) {
-  if (_list.size() < 2)
-    throw std::runtime_error(", the stack has less than two members.");
-  std::list<IOperand const *>::iterator it = _list.begin();
-  std::advance(it, 1);  // Get previous IOperand *
-  IOperand const *result = *(*it) + *_list.front();
+  IOperand const *result = *(_getLhs()) + *_list.front();
   _clearReplacedOperands();
   _list.push_front(result);
 }
 
 void Parser::_sub(void) {
-  if (_list.size() < 2)
-    throw std::runtime_error(", the stack has less than two members.");
-  std::list<IOperand const *>::iterator it = _list.begin();
-  std::advance(it, 1);  // Get previous IOperand *
-  IOperand const *result = *(*it) - *_list.front();
+  IOperand const *result = *(_getLhs()) - *_list.front();
   _clearReplacedOperands();
   _list.push_front(result);
 }
 
 void Parser::_mul(void) {
-  if (_list.size() < 2)
-    throw std::runtime_error(", the stack has less than two members.");
-  std::list<IOperand const *>::iterator it = _list.begin();
-  std::advance(it, 1);  // Get previous IOperand *
-  IOperand const *result = *(*it) * *_list.front();
+  IOperand const *result = *(_getLhs()) * *_list.front();
   _clearReplacedOperands();
   _list.push_front(result);
 }
 
-void Parser::_div(void) {}
+void Parser::_div(void) {
+  IOperand const *result = *(_getLhs()) / *_list.front();
+  _clearReplacedOperands();
+  _list.push_front(result);
+}
 
-void Parser::_mod(void) {}
+void Parser::_mod(void) {
+  IOperand const *result = *(_getLhs()) % *_list.front();
+  _clearReplacedOperands();
+  _list.push_front(result);
+}
 
 void Parser::_print(void) {
   if ((_list.front())->getType() == Int8) {
@@ -93,6 +107,14 @@ void Parser::_print(void) {
     std::cout << operand->getValue() << std::endl;
   } else
     throw std::runtime_error(", non Int8 value.");
+}
+
+IOperand const *Parser::_getLhs(void) {
+  if (_list.size() < 2)
+    throw std::runtime_error(", the stack has less than two members.");
+  std::list<IOperand const *>::iterator it = _list.begin();
+  std::advance(it, 1);  // Get previous IOperand *
+  return *it;
 }
 
 void Parser::_clearReplacedOperands(void) {

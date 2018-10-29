@@ -2,11 +2,9 @@
 ; sample.avm -
 ; -------------
 
-push float(70575.48)
-push int16(32710)
-push int32(214324761)
-add
-dump
-mul
+push int8(48)
+print
+push int16(10)
+mod
 dump
 exit
