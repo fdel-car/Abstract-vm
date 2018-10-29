@@ -12,14 +12,14 @@ Parser::Parser(std::vector<std::pair<eTokenType, std::string>> const &vector)
       }
     }
   } catch (const std::out_of_range &err) {
-    std::cout << "Parser error: could not \033[1m" << (_it - 2)->second
-              << "\033[0m " << _it->second << ", \033[31;1m" << err.what()
-              << "\033[0m." << std::endl;
+    std::cout << "Parser \033[31merror\033[0m: could not \033[1m"
+              << (_it - 2)->second << "\033[0m " << _it->second
+              << ", \033[31;1m" << err.what() << "\033[0m." << std::endl;
   } catch (const DivisionByZero &err) {
-    std::cout << "Parser error: " << err.what() << std::endl;
+    std::cout << "Parser \033[31merror\033[0m: " << err.what() << std::endl;
   } catch (const std::runtime_error &err) {
-    std::cout << "Parser error: could not \033[1m" << _it->second << "\033[0m"
-              << err.what() << std::endl;
+    std::cout << "Parser \033[31merror\033[0m: could not \033[1m" << _it->second
+              << "\033[0m" << err.what() << std::endl;
   }
 }
 
@@ -100,11 +100,12 @@ void Parser::_mod(void) {
 }
 
 void Parser::_print(void) {
+  if (_list.size() < 1) throw std::runtime_error(", the stack is empty.");
   if ((_list.front())->getType() == Int8) {
     Operand<char> const *operand =
         dynamic_cast<Operand<char> const *>(_list.front());
     if (operand->getValue() < 0) throw std::runtime_error(", non ASCII value.");
-    std::cout << operand->getValue() << std::endl;
+    std::cout << operand->getValue();
   } else
     throw std::runtime_error(", non Int8 value.");
 }

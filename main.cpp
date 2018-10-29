@@ -1,6 +1,6 @@
+#include <fstream>
 #include "Lexer.hpp"
 #include "Parser.hpp"
-#include <fstream>
 
 int main(int argc, char **argv) {
   if (argc > 1) {
@@ -13,24 +13,22 @@ int main(int argc, char **argv) {
                                 (std::istreambuf_iterator<char>()));
         if (fileContent.length() == 0)
           std::cout << "The file " << argv[i] << " is empty." << std::endl;
-        Lexer lexer(fileContent);
-        if (lexer.isValid())
-          Parser parser(lexer.getVector());
+        else {
+          Lexer lexer(fileContent);
+          if (lexer.isValid()) Parser parser(lexer.getVector());
+        }
       }
-      if (i < argc - 1)
-        std::cout << std::endl;
+      if (i < argc - 1) std::cout << std::endl;
     }
   } else {
     std::string data;
     std::string line;
     while (getline(std::cin, line)) {
       data += line + "\n";
-      if (line.find(";;") != std::string::npos)
-        break;
+      if (line.find(";;") != std::string::npos) break;
     }
     Lexer lexer(data);
-    if (lexer.isValid())
-      Parser parser(lexer.getVector());
+    if (lexer.isValid()) Parser parser(lexer.getVector());
   }
   return 0;
 }

@@ -94,8 +94,8 @@ Lexer::Lexer(std::string const &data) : _isValid(true) {
         }
       }
     } catch (const std::logic_error &err) {
-      std::cout << "Lexer error: \033[1mline " << lineIndex << "\033[0m, "
-                << err.what() << std::endl;
+      std::cout << "Lexer \033[31merror\033[0m: line \033[1m" << lineIndex
+                << "\033[0m, " << err.what() << std::endl;
       _isValid = false;
     }
   }
@@ -104,20 +104,25 @@ Lexer::Lexer(std::string const &data) : _isValid(true) {
   std::vector<std::pair<eTokenType, std::string>>::const_iterator it =
       _vector.begin();
   for (; it != _vector.end(); it++) {
-    if (it->first == Instruction && it->second == "exit")
-      break;
+    if (it->first == Instruction && it->second == "exit") break;
   }
   if (it == _vector.end()) {
-    std::cout << "Lexer error: \033[1mexit\033[0m instruction not found."
+    std::cout << "Lexer \033[31merror\033[0m: \033[1mexit\033[0m instruction "
+                 "not found."
               << std::endl;
     _isValid = false;
   }
+  if (_vector.size() > 0 && *it != _vector.back())
+    std::cout << "Lexer \033[33mwarning\033[0m: instructions found after "
+                 "\033[1mexit\033[0m, "
+                 "they will be ignored."
+              << std::endl;
 }
 
 Lexer::~Lexer(void) {}
 
-std::vector<std::pair<eTokenType, std::string>> const
-Lexer::getVector(void) const {
+std::vector<std::pair<eTokenType, std::string>> const Lexer::getVector(
+    void) const {
   return _vector;
 }
 
