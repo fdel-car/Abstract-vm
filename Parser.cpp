@@ -49,6 +49,7 @@ void Parser::_dump(void) {
 }
 
 void Parser::_assert(void) {
+  if (_list.empty()) throw std::runtime_error(", the stack is empty.");
   _it++;
   Operand<double> const *lhs =
       static_cast<Operand<double> const *>(_list.front());

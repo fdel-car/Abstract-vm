@@ -1,7 +1,6 @@
 #include "Lexer.hpp"
 #include <algorithm>
 #include <cctype>
-// #include <fstream>
 #include <locale>
 #include <regex>
 #include <sstream>
@@ -24,6 +23,14 @@ static inline void trim(std::string &str) {
 static size_t InstrListLength = sizeof(InstrList) / sizeof(InstrList[0]);
 static size_t OperandListLength = sizeof(OperandList) / sizeof(OperandList[0]);
 
+std::string removeExtraSpaces(const std::string &input) {
+  std::string output;
+  std::unique_copy(input.begin(), input.end(),
+                   std::back_insert_iterator<std::string>(output),
+                   [](char a, char b) { return isspace(a) && isspace(b); });
+  return output;
+}
+
 Lexer::Lexer(std::string const &data) : _isValid(true) {
   std::istringstream iss(data);
   std::string line;
@@ -37,6 +44,7 @@ Lexer::Lexer(std::string const &data) : _isValid(true) {
       size_t semicolon = line.find(';');
       line = line.substr(0, semicolon);
       trim(line);
+      line = removeExtraSpaces(line);
 
       if (!line.empty()) {
         // Create Instruction token if there is no syntax error
@@ -49,6 +57,8 @@ Lexer::Lexer(std::string const &data) : _isValid(true) {
                                  "\033[0m");
 
         if (instr == "assert" || instr == "push") {
+          if (space == std::string::npos)
+            throw std::logic_error(instr + " takes one mandatory parameter.");
           // Create OperandType token if there is no syntax error
           size_t openingBracket = line.find('(', space);
           std::string type =
@@ -104,15 +114,15 @@ Lexer::Lexer(std::string const &data) : _isValid(true) {
   std::vector<std::pair<eTokenType, std::string>>::const_iterator it =
       _vector.begin();
   for (; it != _vector.end(); it++) {
-    if (it->first == Instruction && it->second == "exit") break;
+    if (it->first == Instruction && it->second == "exit")
+      break;
   }
   if (it == _vector.end()) {
     std::cout << "Lexer \033[31merror\033[0m: \033[1mexit\033[0m instruction "
                  "not found."
               << std::endl;
     _isValid = false;
-  }
-  if (_vector.size() > 0 && *it != _vector.back())
+  } else if (_vector.size() > 0 && *it != _vector.back())
     std::cout << "Lexer \033[33mwarning\033[0m: instructions found after "
                  "\033[1mexit\033[0m, "
                  "they will be ignored."
@@ -121,8 +131,8 @@ Lexer::Lexer(std::string const &data) : _isValid(true) {
 
 Lexer::~Lexer(void) {}
 
-std::vector<std::pair<eTokenType, std::string>> const Lexer::getVector(
-    void) const {
+std::vector<std::pair<eTokenType, std::string>> const
+Lexer::getVector(void) const {
   return _vector;
 }
 
